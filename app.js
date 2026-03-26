@@ -1,4 +1,4 @@
-if(process.env.NODE_ENV != "production") {
+if (process.env.NODE_ENV != "production") {
     require('dotenv').config();
 }
 
@@ -6,6 +6,7 @@ console.log(process.env.SECRET);
 
 const express = require("express");
 const app = express();
+app.set("trust proxy", 1);
 const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
@@ -25,11 +26,11 @@ const userRouter = require("./routes/user.js");
 const dbUrl = process.env.ATLASDB_URL;
 
 main().then(() => {
-    console.log("connected to DB");
-})
-.catch((err) => {
-    console.log(err);
-})
+        console.log("connected to DB");
+    })
+    .catch((err) => {
+        console.log(err);
+    })
 
 async function main() {
     await mongoose.connect(dbUrl);
@@ -37,7 +38,7 @@ async function main() {
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
@@ -58,11 +59,13 @@ const sessionOptions = {
     store,
     secret: process.env.SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
     },
 };
 
@@ -87,15 +90,7 @@ app.use((req, res, next) => {
     next();
 })
 
-// app.get("/demouser", async(req, res) => {
-//     let fakeUser = new User({
-//         email: "student@gmail.com",
-//         username: "delta-demo"
-//     });
 
-//     let registeredUser =  await User.register(fakeUser, "helloworld");
-//     res.send(registeredUser);
-// });
 
 app.get("/", (req, res) => {
     res.redirect("/listings");
@@ -111,8 +106,8 @@ app.all("*", (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    let {statusCode = 500, message = "something went wrong!"} = err;
-    res.status(statusCode).render("error.ejs", {message});
+    let { statusCode = 500, message = "something went wrong!" } = err;
+    res.status(statusCode).render("error.ejs", { message });
 });
 
 const PORT = process.env.PORT || 8080;
